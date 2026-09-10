@@ -293,3 +293,55 @@ TEST(unicode_set, set_op) {
     t -= abc;
     EXPECT_TRUE(t == e);
 }
+
+TEST(unicode_set, flip_multiple_ranges) {
+    // every range of the class must survive the negation, not just the first
+    CodePointSet cps;
+    cps.setRange('A', 'Z');
+    cps.setRange('a', 'z');
+
+    CodePointSet expected;
+    expected.setRange(0, 'A' - 1);
+    expected.setRange('Z' + 1, 'a' - 1);
+    expected.setRange('z' + 1, MAX_UNICODE);
+
+    CodePointSet flipped = cps;
+    flipped.flip();
+    EXPECT_TRUE(flipped == expected);
+
+    // the negation is its own inverse
+    flipped.flip();
+    EXPECT_TRUE(flipped == cps);
+
+    // and it does not depend on the order the ranges were added in
+    CodePointSet reversed;
+    reversed.setRange('a', 'z');
+    reversed.setRange('A', 'Z');
+    reversed.flip();
+    EXPECT_TRUE(reversed == expected);
+}
+
+TEST(unicode_set, subtract_multiple_ranges) {
+    CodePointSet full;
+    full.setRange(0, 100);
+
+    CodePointSet holes;
+    holes.setRange(10, 20);
+    holes.setRange(30, 40);
+    holes.setRange(50, 60);
+
+    CodePointSet expected;
+    expected.setRange(0, 9);
+    expected.setRange(21, 29);
+    expected.setRange(41, 49);
+    expected.setRange(61, 100);
+
+    CodePointSet t = full;
+    t -= holes;
+    EXPECT_TRUE(t == expected);
+
+    // subtracting a set from itself empties it
+    t = holes;
+    t -= t;
+    EXPECT_TRUE(t.none());
+}

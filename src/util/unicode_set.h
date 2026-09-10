@@ -72,7 +72,19 @@ public:
     }
 
     void flip(void) {
-        impl = implT(interval(0, MAX_UNICODE)) - impl;
+        /* Subtracting a whole interval set is not reliable: erase() first
+         * narrows the operand to a "common range" found with lower_bound /
+         * upper_bound over the interval comparator. When one interval of the
+         * object spans several intervals of the operand, those compare
+         * equivalent to the query while being pairwise non-equivalent, the
+         * comparator is not a strict weak ordering for that query and the
+         * search returns a range covering a single element. All the other
+         * intervals are then left behind. Subtract one interval at a time. */
+        implT rv(interval(0, MAX_UNICODE));
+        for (const_iterator it = impl.begin(); it != impl.end(); ++it) {
+            rv -= *it;
+        }
+        impl = std::move(rv);
     }
 
     void operator|=(const CodePointSet &a) {
@@ -111,7 +123,14 @@ public:
     }
 
     void operator-=(const CodePointSet &a) {
-        impl -= a.impl;
+        if (this == &a) {
+            impl.clear();
+            return;
+        }
+        /* see flip() for why this is done one interval at a time */
+        for (const_iterator it = a.impl.begin(); it != a.impl.end(); ++it) {
+            impl -= *it;
+        }
     }
 
     /* finds the nth set codepoint, returns INVALID_UNICODE on failure */
