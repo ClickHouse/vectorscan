@@ -173,7 +173,7 @@ void addLiteral(ComponentSequence *currentSeq, char c, const ParseMode &mode) {
         /* leverage ComponentClass to generate the vertices */
         auto cc = getComponentClass(mode);
         assert(cc);
-        cc->add(c);
+        cc->add((u8)c);
         cc->finalize();
         currentSeq->addComponent(std::move(cc));
     } else {
@@ -273,6 +273,7 @@ unichar readUtf8CodePoint4c(const char *s) {
 %%{
     machine regex;
     alphtype unsigned char;
+    getkey (unsigned char)(*p);
 
     action throwUnsupportedEscape {
         ostringstream str;
@@ -1001,7 +1002,7 @@ unichar readUtf8CodePoint4c(const char *s) {
               # not a back-ref, not octal, just PCRE madness
               '\\' [89] => {
                   // whatever we found here
-                  currentCls->add(*(ts + 1));
+                  currentCls->add((u8)*(ts + 1));
 
               };
               # Unicode Hex
@@ -1075,7 +1076,7 @@ unichar readUtf8CodePoint4c(const char *s) {
 
               '\\' any => {
                   // add the literal char
-                  currentCls->add(*(ts + 1));
+                  currentCls->add((u8)*(ts + 1));
               };
 
               #unicode chars
@@ -1236,7 +1237,7 @@ unichar readUtf8CodePoint4c(const char *s) {
 
               # Literal character
               any => {
-                  currentCls->add(*ts);
+                  currentCls->add((u8)*ts);
                   inCharClassEarly = false;
               };
             *|;
